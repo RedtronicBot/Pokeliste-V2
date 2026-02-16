@@ -1,0 +1,46 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Set {
+  id        String  @id
+  name      String
+  logo      String?
+  symbol    String?
+  cardCount Int
+  cards     Card[]
+}
+
+model Card {
+  id            String         @id
+  setId         String
+  sets          Set            @relation(fields: [setId], references: [id])
+  image         String
+  name          String
+  localId       Int
+  ownedVariants OwnedVariant[]
+}
+
+enum VariantType {
+  NORMAL
+  HOLO
+  REVERSE
+  FIRST_EDITION
+  SECOND_EDITION
+}
+
+model OwnedVariant {
+  id       Int         @id @default(autoincrement())
+  cardId   String
+  card     Card        @relation(fields: [cardId], references: [id])
+  variant  VariantType
+  quantity Int         @default(1)
+
+  @@unique([cardId, variant])
+}
