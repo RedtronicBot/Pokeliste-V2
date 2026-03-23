@@ -14,6 +14,9 @@ model Set {
   logo      String?
   symbol    String?
   cardCount Int
+  seriesId  String
+  series    Series  @relation(fields: [seriesId], references: [id])
+  position  Int
   cards     Card[]
 }
 
@@ -27,20 +30,21 @@ model Card {
   ownedVariants OwnedVariant[]
 }
 
-enum VariantType {
-  NORMAL
-  HOLO
-  REVERSE
-  FIRST_EDITION
-  SECOND_EDITION
+model OwnedVariant {
+  id            Int    @id @default(autoincrement())
+  cardId        String @unique
+  card          Card   @relation(fields: [cardId], references: [id])
+  normal        Int
+  holo          Int
+  reverse       Int
+  firstEdition  Int
+  secondEdition Int
 }
 
-model OwnedVariant {
-  id       Int         @id @default(autoincrement())
-  cardId   String
-  card     Card        @relation(fields: [cardId], references: [id])
-  variant  VariantType
-  quantity Int         @default(1)
-
-  @@unique([cardId, variant])
+model Series {
+  id       String  @id
+  name     String
+  logo     String?
+  position Int
+  sets     Set[]
 }

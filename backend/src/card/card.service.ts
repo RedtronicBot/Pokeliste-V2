@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { PrismaService } from "prisma/prisma.service"
+import { CreateOwnedVariantDto } from "./dto/CreateOwnedVariant.dto"
 
 @Injectable()
 export class CardService {
@@ -23,6 +24,36 @@ export class CardService {
 
     return this.prisma.card.findMany({
       where: { setId },
+      include: { ownedVariants: true },
+    })
+  }
+
+  addOrUpdateOwnedCard(cardId: string, dto: CreateOwnedVariantDto) {
+    const { normal, reverse, holo, firstEdition, secondEdition } = dto
+    const total = normal + holo + reverse + firstEdition + secondEdition
+
+    if (total === 0) {
+      return this.prisma.ownedVariant.deleteMany({
+        where: { cardId },
+      })
+    }
+    return this.prisma.ownedVariant.upsert({
+      where: { cardId },
+      update: {
+        normal,
+        reverse,
+        holo,
+        firstEdition,
+        secondEdition,
+      },
+      create: {
+        cardId,
+        normal,
+        reverse,
+        holo,
+        firstEdition,
+        secondEdition,
+      },
     })
   }
 
@@ -34,14 +65,14 @@ export class CardService {
           update: {
             image: card.image,
             name: card.name,
-            localId: card.localId,
+            localId: Number(card.localId),
             setId,
           },
           create: {
             id: card.id,
             image: card.image,
             name: card.name,
-            localId: card.localId,
+            localId: Number(card.localId),
             setId,
           },
         }),
