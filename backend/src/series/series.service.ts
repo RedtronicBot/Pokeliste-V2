@@ -4,13 +4,12 @@ import { PrismaService } from "prisma/prisma.service"
 @Injectable()
 export class SeriesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async isEmpty() {
+    return (await this.prisma.series.count()) === 0
+  }
+
   async findAll() {
-    const existingSeries = await this.prisma.series.count()
-
-    if (existingSeries === 0) {
-      await this.syncSeries()
-    }
-
     return this.prisma.series.findMany({
       orderBy: {
         position: "asc",

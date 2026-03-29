@@ -1,34 +1,46 @@
-import { Injectable, Logger } from "@nestjs/common"
-import { Cron, CronExpression } from "@nestjs/schedule"
+import { Injectable } from "@nestjs/common"
 import { PrismaService } from "prisma/prisma.service"
-import { SeriesService } from "src/series/series.service"
+import { CardService } from "src/card/card.service"
 import { detectSeriesId } from "src/utils/detectSeriesId.utils"
 @Injectable()
 export class SetService {
-  private readonly logger = new Logger(SetService.name)
   constructor(
     private readonly prisma: PrismaService,
-    private readonly seriesService: SeriesService,
+    private readonly cardServices: CardService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
-  async handleCron() {
-    this.logger.log("Lancement du sync quotidien des sets")
-    await this.seriesService.syncSeries()
-    await this.syncSets()
-    this.logger.log("Sync terminé")
+  async isEmpty() {
+    return (await this.prisma.set.count()) === 0
   }
 
-  async findAll() {
-    const existingSets = await this.prisma.set.count()
+  async findBySet(setId: string) {
+    const existingCards = await this.prisma.card.count({
+      where: { setId },
+    })
 
-    if (existingSets === 0) {
-      await this.syncSets()
+    const response = await fetch(`https://api.tcgdex.net/v2/fr/sets/${setId}`)
+
+    if (!response.ok) {
+      throw new Error("Erreur API TCGDex")
     }
 
-    return this.prisma.set.findMany({
-      orderBy: {
-        position: "asc",
+    const data = await response.json()
+
+    if (existingCards !== data.cardCount.total) {
+      await this.cardServices.syncCardWithData(setId, data)
+    }
+
+    return this.prisma.set.findUnique({
+      where: { id: setId },
+      include: {
+        cards: {
+          include: {
+            ownedVariant: true,
+          },
+          orderBy: {
+            localId: "asc",
+          },
+        },
       },
     })
   }
@@ -36,7 +48,7 @@ export class SetService {
   async syncSets() {
     const response = await fetch("https://api.tcgdex.net/v2/fr/sets")
     const sets = await response.json()
-    const series = await this.seriesService.findAll()
+    const series = await this.prisma.series.findMany()
     const seriesIds = series.map((s) => s.id)
 
     await this.prisma.$transaction(

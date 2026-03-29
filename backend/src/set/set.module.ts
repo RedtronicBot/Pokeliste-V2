@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common"
 import { SetService } from "./set.service"
 import { SetController } from "./set.controller"
-import { SeriesModule } from "src/series/series.module"
+import { CardModule } from "src/card/card.module"
 
 @Module({
-  imports: [SeriesModule],
+  imports: [CardModule],
   providers: [SetService],
   controllers: [SetController],
+  exports: [SetService],
 })
 export class SetModule {}

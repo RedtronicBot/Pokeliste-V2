@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router"
 import Dashboard from "./pages/Dashboard"
 import Navbar from "./components/Navbar"
+import ExtensionTcg from "./pages/ExtensionTcg"
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/:id" element={<ExtensionTcg />} />
       </Routes>
     </div>
   )

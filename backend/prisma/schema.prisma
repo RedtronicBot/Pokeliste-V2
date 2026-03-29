@@ -21,18 +21,17 @@ model Set {
 }
 
 model Card {
-  id            String         @id
-  setId         String
-  sets          Set            @relation(fields: [setId], references: [id])
-  image         String
-  name          String
-  localId       Int
-  ownedVariants OwnedVariant[]
+  id           String        @id
+  setId        String
+  sets         Set           @relation(fields: [setId], references: [id])
+  image        String
+  name         String
+  localId      Int
+  ownedVariant OwnedVariant?
 }
 
 model OwnedVariant {
-  id            Int    @id @default(autoincrement())
-  cardId        String @unique
+  cardId        String @id
   card          Card   @relation(fields: [cardId], references: [id])
   normal        Int
   holo          Int

@@ -5,9 +5,11 @@ import { ScheduleModule } from "@nestjs/schedule"
 import { CardModule } from "./card/card.module"
 import { ConfigModule } from "@nestjs/config"
 import { SeriesModule } from "./series/series.module"
+import { SyncService } from "./sync/sync.service"
+import { SyncModule } from "./sync/sync.module"
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, SetModule, ScheduleModule.forRoot(), CardModule, SeriesModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, SetModule, ScheduleModule.forRoot(), CardModule, SeriesModule, SyncModule],
   controllers: [],
   providers: [],
 })

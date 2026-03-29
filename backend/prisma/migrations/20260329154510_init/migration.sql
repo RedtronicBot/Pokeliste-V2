@@ -24,7 +24,6 @@ CREATE TABLE `Card` (
 
 -- CreateTable
 CREATE TABLE `OwnedVariant` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `cardId` VARCHAR(191) NOT NULL,
     `normal` INTEGER NOT NULL,
     `holo` INTEGER NOT NULL,
@@ -32,8 +31,7 @@ CREATE TABLE `OwnedVariant` (
     `firstEdition` INTEGER NOT NULL,
     `secondEdition` INTEGER NOT NULL,
 
-    UNIQUE INDEX `OwnedVariant_cardId_key`(`cardId`),
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`cardId`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable

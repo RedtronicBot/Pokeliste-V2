@@ -4,7 +4,7 @@ export type Card = {
   image: string
   name: string
   localId: string
-  ownedVariant: OwnedVariant[]
+  ownedVariant: OwnedVariant
 }
 
 export type OwnedVariant = {
@@ -25,6 +25,7 @@ export type SetModel = {
   cardCount: number
   position: string
   seriesId: string
+  cards: Card[]
 }
 
 export type Series = {
