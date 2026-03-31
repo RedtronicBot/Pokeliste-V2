@@ -4,19 +4,21 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+# Étape CRUCIALE : On prépare l'environnement Prisma
 COPY prisma ./prisma/
+
+# On force la génération. 
+# Si ton environnement Docker est bien en 'production', 
+# Prisma devrait générer du JS.
 RUN npx prisma generate
 
 COPY . .
 RUN npm run build
 
-# --- SECTION DIAGNOSTIC ---
-# On affiche le contenu de /app, /app/dist et le dossier de Prisma
-RUN echo "--- CONTENU DE /APP ---" && ls -la
-RUN echo "--- CONTENU DE /APP/DIST ---" && ls -la dist
-RUN echo "--- CONTENU DE /APP/DIST/SRC ---" && ls -la dist/src
-# Ajuste le nom du dossier prisma-client ci-dessous selon ton schema.prisma
-RUN echo "--- CONTENU DU DOSSIER PRISMA GENERATED ---" && ls -la prisma/generated/prisma || echo "Dossier non trouvé"
+# --- DIAGNOSTIC FINAL (Le juge de paix) ---
+# On vérifie si NestJS a bien généré du JS pour Prisma dans DIST
+RUN echo "--- VERIFICATION JS DANS DIST/PRISMA ---" && \
+    ls -la dist/prisma/generated/prisma || echo "Pas de JS ici"
 
 EXPOSE 3000
 CMD ["node", "dist/src/main"]
