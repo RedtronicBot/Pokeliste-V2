@@ -7,6 +7,7 @@ RUN npm install
 COPY prisma ./prisma/
 RUN npx prisma generate
 COPY . .
+RUN npm install --save-dev esbuild
 RUN npm run build
 
 # --- STAGE RUN ---
