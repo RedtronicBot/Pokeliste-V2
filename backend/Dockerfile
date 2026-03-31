@@ -7,9 +7,8 @@ RUN npm install
 COPY prisma ./prisma/
 RUN npx prisma generate
 COPY . .
-RUN npm install --save-dev esbuild
 RUN npm run build
-
+COPY --from=build /app/prisma/generated ./dist/prisma/generated
 # --- STAGE RUN ---
 FROM node:20-alpine
 WORKDIR /app
