@@ -1,24 +1,23 @@
-FROM node:20-alpine
+# --- STAGE BUILD ---
+FROM node:20-alpine AS build
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm install
-
-# Étape CRUCIALE : On prépare l'environnement Prisma
 COPY prisma ./prisma/
-
-# On force la génération. 
-# Si ton environnement Docker est bien en 'production', 
-# Prisma devrait générer du JS.
+# Génère le client Prisma DANS le dossier par défaut (prisma/generated)
 RUN npx prisma generate
-
 COPY . .
 RUN npm run build
 
-# --- DIAGNOSTIC FINAL (Le juge de paix) ---
-# On vérifie si NestJS a bien généré du JS pour Prisma dans DIST
-RUN echo "--- VERIFICATION JS DANS DIST/PRISMA ---" && \
-    ls -la dist/prisma/generated/prisma || echo "Pas de JS ici"
-
+# --- STAGE RUN ---
+FROM node:20-alpine
+WORKDIR /app
+# 1. Copie des dépendances
+COPY --from=build /app/node_modules ./node_modules
+# 2. Copie du code compilé
+COPY --from=build /app/dist ./dist
+# 3. Copie du dossier prisma ET du dossier generated
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/generated ./generated
 EXPOSE 3000
 CMD ["node", "dist/src/main"]
