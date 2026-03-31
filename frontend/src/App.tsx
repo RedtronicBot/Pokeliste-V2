@@ -11,7 +11,7 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/:id" element={<ExtensionTcg />} />
+        <Route path="/ptcg/:id" element={<ExtensionTcg />} />
       </Routes>
     </div>
   )
