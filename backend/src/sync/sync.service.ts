@@ -14,7 +14,7 @@ export class SyncService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     const needsSync = (await this.seriesService.isEmpty()) || (await this.setService.isEmpty())
-
+    console.log(needsSync)
     if (needsSync) {
       this.logger.log("Base vide détectée, sync initial...")
       await this.handleCron()
