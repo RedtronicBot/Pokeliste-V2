@@ -13,6 +13,6 @@ FROM node:20-alpine
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/prisma/generated ./prisma/generated
+COPY --from=build /app/prisma/generated ./dist/prisma/generated
 EXPOSE 3000
 CMD ["node", "dist/src/main"]
