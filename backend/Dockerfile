@@ -18,6 +18,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 # 3. Copie du dossier prisma ET du dossier generated
 COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/generated ./generated
+COPY --from=build /app/prisma/generated ./dist/prisma/generated
 EXPOSE 3000
 CMD ["node", "dist/src/main"]
