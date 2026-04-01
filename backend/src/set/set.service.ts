@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common"
+import pLimit from "p-limit"
 import { PrismaService } from "prisma/prisma.service"
 import { CardService } from "src/card/card.service"
 import { SetBrief } from "src/types"
@@ -48,6 +49,7 @@ export class SetService {
   async syncSets() {
     const response = await fetch("https://api.tcgdex.net/v2/fr/sets")
     const sets: SetBrief[] = await response.json()
+    const limit = pLimit(5)
 
     // Récupérer les sets déjà en DB pour éviter les appels inutiles
     const existingSets = await this.prisma.set.findMany({
@@ -57,19 +59,17 @@ export class SetService {
 
     // N'appeler l'API détaillée que pour les sets sans seriesId connu
     const detailedSets = await Promise.all(
-      sets.map(async (set) => {
-        const existing = existingSetMap.get(set.id)
-
-        // Si le set existe déjà en DB avec un seriesId, on réutilise
-        if (existing?.seriesId) {
-          return { ...set, serieId: existing.seriesId }
-        }
-
-        // Sinon on appelle l'API détaillée pour récupérer la série
-        const detail = await fetch(`https://api.tcgdex.net/v2/fr/sets/${set.id}`)
-        const detailData = await detail.json()
-        return { ...set, serieId: detailData.serie.id }
-      }),
+      sets.map(async (set) =>
+        limit(async () => {
+          const existing = existingSetMap.get(set.id)
+          if (existing?.seriesId) {
+            return { ...set, serieId: existing.seriesId }
+          }
+          const res = await fetch(`https://api.tcgdex.net/v2/fr/sets/${set.id}`)
+          const data = await res.json()
+          return { ...set, serieId: data.serie.id }
+        }),
+      ),
     )
 
     await this.prisma.$transaction(
