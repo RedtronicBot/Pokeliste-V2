@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common"
 import { PrismaService } from "prisma/prisma.service"
 import { CardService } from "src/card/card.service"
-import { detectSeriesId } from "src/utils/detectSeriesId.utils"
+import { SetBrief } from "src/types"
 @Injectable()
 export class SetService {
   constructor(
@@ -47,14 +47,33 @@ export class SetService {
 
   async syncSets() {
     const response = await fetch("https://api.tcgdex.net/v2/fr/sets")
-    const sets = await response.json()
-    const series = await this.prisma.series.findMany()
-    const seriesIds = series.map((s) => s.id)
+    const sets: SetBrief[] = await response.json()
+
+    // Récupérer les sets déjà en DB pour éviter les appels inutiles
+    const existingSets = await this.prisma.set.findMany({
+      select: { id: true, seriesId: true },
+    })
+    const existingSetMap = new Map(existingSets.map((s) => [s.id, s]))
+
+    // N'appeler l'API détaillée que pour les sets sans seriesId connu
+    const detailedSets = await Promise.all(
+      sets.map(async (set) => {
+        const existing = existingSetMap.get(set.id)
+
+        // Si le set existe déjà en DB avec un seriesId, on réutilise
+        if (existing?.seriesId) {
+          return { ...set, serieId: existing.seriesId }
+        }
+
+        // Sinon on appelle l'API détaillée pour récupérer la série
+        const detail = await fetch(`https://api.tcgdex.net/v2/fr/sets/${set.id}`)
+        const detailData = await detail.json()
+        return { ...set, serieId: detailData.serie.id }
+      }),
+    )
 
     await this.prisma.$transaction(
-      sets.map((set, index) => {
-        const seriesId = detectSeriesId(set.id, seriesIds) ?? "misc"
-
+      detailedSets.map((set, index) => {
         return this.prisma.set.upsert({
           where: { id: set.id },
           update: {
@@ -62,7 +81,7 @@ export class SetService {
             logo: set.logo,
             symbol: set.symbol,
             cardCount: set.cardCount.total,
-            seriesId,
+            seriesId: set.serieId,
             position: index,
           },
           create: {
@@ -71,7 +90,7 @@ export class SetService {
             logo: set.logo,
             symbol: set.symbol,
             cardCount: set.cardCount.total,
-            seriesId,
+            seriesId: set.serieId,
             position: index,
           },
         })

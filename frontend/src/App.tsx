@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router"
 import Dashboard from "./pages/Dashboard"
 import Navbar from "./components/Navbar"
 import ExtensionTcg from "./pages/ExtensionTcg"
+import DashboardPocket from "./pages/DashboardPocket"
 
 function App() {
   return (
@@ -11,7 +12,8 @@ function App() {
       </header>
       <Routes>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/ptcg/:id" element={<ExtensionTcg />} />
+        <Route path="/ptcgp" element={<DashboardPocket />} />
+        <Route path="/extension/:id" element={<ExtensionTcg />} />
       </Routes>
     </div>
   )

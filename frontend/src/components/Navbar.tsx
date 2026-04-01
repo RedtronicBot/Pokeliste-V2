@@ -8,7 +8,7 @@ const Navbar = () => {
         <Link className="hover:text-hover-text text-sm text-slate-400 transition-colors" to={"/"}>
           Pokemon TCG
         </Link>
-        <Link className="hover:text-hover-text text-sm text-slate-400 transition-colors" to={"/tcgp"}>
+        <Link className="hover:text-hover-text text-sm text-slate-400 transition-colors" to={"/ptcgp"}>
           Pokemon TCG Pocket
         </Link>
         <Link className="hover:text-hover-text text-sm text-slate-400 transition-colors" to={"/stats"}>
