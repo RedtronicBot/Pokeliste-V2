@@ -3,6 +3,7 @@ import Dashboard from "./pages/Dashboard"
 import Navbar from "./components/Navbar"
 import ExtensionTcg from "./pages/ExtensionTcg"
 import DashboardPocket from "./pages/DashboardPocket"
+import AuthSuccess from "./pages/AuthSuccess"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/ptcgp" element={<DashboardPocket />} />
         <Route path="/extension/:id" element={<ExtensionTcg />} />
+        <Route path="/auth/success" element={<AuthSuccess />} />
       </Routes>
     </div>
   )

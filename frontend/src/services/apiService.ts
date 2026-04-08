@@ -1,11 +1,17 @@
 import { createApiClient } from "../hooks/createApiClient"
-import type { OwnedVariant, Series, SetModel } from "../types"
+import type { DiscordUser, OwnedVariant, RawCard, RawSetModel, Series, SetModel } from "../types"
 
 const api = createApiClient()
 export const apiService = {
   getCard: async (id: string): Promise<SetModel> => {
-    const { data } = await api.get(`set/${id}`)
-    return data
+    const { data } = await api.get<RawSetModel>(`set/${id}`)
+    return {
+      ...data,
+      cards: data.cards.map((card: RawCard) => ({
+        ...card,
+        ownedVariant: card.ownedVariants?.[0] ?? null,
+      })),
+    }
   },
   updateVariant: async (id: string, dataVariant: Omit<OwnedVariant, "id" | "cardId">): Promise<OwnedVariant> => {
     const { data } = await api.post(`card/${id}`, dataVariant)
@@ -14,5 +20,12 @@ export const apiService = {
   getSeries: async (): Promise<Series[]> => {
     const { data } = await api.get("series")
     return data
+  },
+  getDiscordMe: async (): Promise<DiscordUser | null> => {
+    const { data } = await api.get("auth/me")
+    return data
+  },
+  getDiscordLogout: async () => {
+    return await api.post("auth/logout")
   },
 }

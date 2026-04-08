@@ -21,23 +21,28 @@ model Set {
 }
 
 model Card {
-  id           String        @id
-  setId        String
-  sets         Set           @relation(fields: [setId], references: [id])
-  image        String
-  name         String
-  localId      Int
-  ownedVariant OwnedVariant?
+  id            String         @id
+  setId         String
+  sets          Set            @relation(fields: [setId], references: [id])
+  image         String
+  name          String
+  localId       Int
+  ownedVariants OwnedVariant[]
 }
 
 model OwnedVariant {
-  cardId        String @id
+  id            String @id @default(uuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id])
+  cardId        String
   card          Card   @relation(fields: [cardId], references: [id])
   normal        Int
   holo          Int
   reverse       Int
   firstEdition  Int
   secondEdition Int
+
+  @@unique([userId, cardId])
 }
 
 model Series {
@@ -46,4 +51,12 @@ model Series {
   logo     String?
   position Int
   sets     Set[]
+}
+
+model User {
+  id            String         @id @default(uuid())
+  discordId     String         @unique
+  username      String
+  avatar        String?
+  ownedVariants OwnedVariant[]
 }

@@ -15,6 +15,7 @@ export function createApiClient() {
     headers: {
       "Content-Type": "application/json",
     },
+    withCredentials: true,
   })
 
   api.interceptors.response.use(

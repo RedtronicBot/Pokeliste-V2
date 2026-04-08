@@ -4,7 +4,7 @@ export type Card = {
   image: string
   name: string
   localId: string
-  ownedVariant: OwnedVariant
+  ownedVariant: OwnedVariant | null
 }
 
 export type OwnedVariant = {
@@ -34,4 +34,19 @@ export type Series = {
   logo: string
   position: string
   sets: SetModel[]
+}
+
+export type DiscordUser = {
+  id: string
+  discordId: string
+  username: string
+  avatar: string | null
+}
+
+export type RawCard = Omit<Card, "ownedVariant"> & {
+  ownedVariants: OwnedVariant[]
+}
+
+export type RawSetModel = Omit<SetModel, "cards"> & {
+  cards: RawCard[]
 }

@@ -1,9 +1,9 @@
 import { X } from "lucide-react"
-import type { Card, OwnedVariant } from "../types"
+import type { Card, OwnedVariant, SetModel } from "../types"
 import { useClickOutside } from "../hooks/useClickOutside"
 import { useRef, useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiService } from "../services/apiService"
 
 interface CardModalInterface {
@@ -28,11 +28,38 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
       secondEdition: card.ownedVariant?.secondEdition ?? 0,
     },
   })
-
+  const queryClient = useQueryClient()
   const modifyCardMutation = useMutation({
     mutationFn: (data: CardFormInputs) => apiService.updateVariant(card.id, data),
-    onSuccess: () => {},
-    onError: () => {},
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ["Extension"] })
+
+      const previous = queryClient.getQueryData(["Extension"])
+
+      // Met à jour le cache optimistiquement
+      queryClient.setQueryData<SetModel>(["Extension"], (old) => ({
+        ...old!,
+        cards: old!.cards.map((oldCard: Card) =>
+          oldCard.id === card.id
+            ? {
+                ...oldCard,
+                ownedVariant: {
+                  id: oldCard.ownedVariant?.id ?? 0,
+                  cardId: oldCard.ownedVariant?.cardId ?? card.id,
+                  ...newData,
+                } satisfies OwnedVariant,
+              }
+            : oldCard,
+        ),
+      }))
+
+      return { previous } // contexte pour le rollback
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback si erreur
+      queryClient.setQueryData(["Extension"], context?.previous)
+    },
+    onSuccess: () => setOpen(false),
   })
 
   const onSubmit: SubmitHandler<CardFormInputs> = (data) => {
@@ -87,6 +114,7 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
           <button
             className="from-primary to-secondary w-full cursor-pointer rounded-lg bg-linear-to-br py-2 text-xs font-bold tracking-wider uppercase"
             type="submit"
+            onClick={() => setOpen(!open)}
           >
             Modifier
           </button>

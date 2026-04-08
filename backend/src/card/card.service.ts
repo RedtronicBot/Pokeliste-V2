@@ -6,17 +6,17 @@ import { CreateOwnedVariantDto } from "./dto/CreateOwnedVariant.dto"
 export class CardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  addOrUpdateOwnedCard(cardId: string, dto: CreateOwnedVariantDto) {
+  addOrUpdateOwnedCard(userId: string, cardId: string, dto: CreateOwnedVariantDto) {
     const { normal, reverse, holo, firstEdition, secondEdition } = dto
     const total = normal + holo + reverse + firstEdition + secondEdition
 
     if (total === 0) {
       return this.prisma.ownedVariant.deleteMany({
-        where: { cardId },
+        where: { userId, cardId },
       })
     }
     return this.prisma.ownedVariant.upsert({
-      where: { cardId },
+      where: { userId_cardId: { userId, cardId } },
       update: {
         normal,
         reverse,
@@ -25,6 +25,7 @@ export class CardService {
         secondEdition,
       },
       create: {
+        userId,
         cardId,
         normal,
         reverse,

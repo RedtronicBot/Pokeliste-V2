@@ -14,7 +14,7 @@ export class SetService {
     return (await this.prisma.set.count()) === 0
   }
 
-  async findBySet(setId: string) {
+  async findBySet(setId: string, userId: string | null) {
     const existingCards = await this.prisma.card.count({
       where: { setId },
     })
@@ -30,13 +30,12 @@ export class SetService {
     if (existingCards !== data.cardCount.total) {
       await this.cardServices.syncCardWithData(setId, data)
     }
-
     return this.prisma.set.findUnique({
       where: { id: setId },
       include: {
         cards: {
           include: {
-            ownedVariant: true,
+            ownedVariants: userId ? { where: { userId }, take: 1 } : false,
           },
           orderBy: {
             localId: "asc",
