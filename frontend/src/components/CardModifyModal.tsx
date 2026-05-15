@@ -5,6 +5,7 @@ import { useRef, useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiService } from "../services/apiService"
+import { useAuth } from "../hooks/useAuth"
 
 interface CardModalInterface {
   card: Card
@@ -14,11 +15,15 @@ interface CardModalInterface {
 type CardFormInputs = Omit<OwnedVariant, "id" | "cardId">
 
 const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
+  const { isAuthenticated } = useAuth()
   const [open, setOpen] = useState(false)
   const imgRef = useRef(null)
   const cardModalRef = useRef(null)
   useClickOutside(cardModalRef, () => setOpen(false), imgRef)
-
+  const handleImageClick = () => {
+    if (!isAuthenticated) return
+    setOpen(!open)
+  }
   const { register, handleSubmit } = useForm<CardFormInputs>({
     defaultValues: {
       normal: card.ownedVariant?.normal ?? 0,
@@ -53,7 +58,7 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
         ),
       }))
 
-      return { previous } // contexte pour le rollback
+      return { previous }
     },
     onError: (_err, _variables, context) => {
       // Rollback si erreur
@@ -68,7 +73,13 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
 
   return (
     <div className="relative">
-      <img className={`h-65 ${!card.ownedVariant ? "grayscale" : ""}`} src={`${card.image}/low.png`} onClick={() => setOpen(!open)} ref={imgRef} />
+      <img
+        className={`h-65 ${!card.ownedVariant ? "grayscale" : ""} ${!isAuthenticated ? "cursor-default" : "cursor-pointer"}`}
+        src={`${card.image}/low.png`}
+        onClick={handleImageClick}
+        ref={imgRef}
+        title={`${isAuthenticated ? "" : "Connectez-vous pour modifier"}`}
+      />
       <div
         ref={cardModalRef}
         className={`${open ? "" : "hidden"} bg-secondary/90 absolute top-0 z-10 h-65 w-full rounded-sm border border-zinc-500 px-2 py-1`}

@@ -28,4 +28,8 @@ export const apiService = {
   getDiscordLogout: async () => {
     return await api.post("auth/logout")
   },
+  getStats: async () => {
+    const { data } = await api.get("stats")
+    return data
+  },
 }

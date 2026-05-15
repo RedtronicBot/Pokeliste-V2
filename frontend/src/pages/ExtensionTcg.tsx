@@ -3,14 +3,21 @@ import { apiService } from "../services/apiService"
 import { useParams } from "react-router"
 import CardModifyModal from "../components/CardModifyModal"
 import extension_fallback from "../assets/pokemon-trading-card-game-logo.png"
+import { Loader2 } from "lucide-react"
 
 const ExtensionTcg = () => {
   const { id } = useParams()
-  const { data } = useQuery({
+  const { data, isLoading, isFetching } = useQuery({
     queryKey: ["Extension"],
     queryFn: async () => await apiService.getCard(id ?? ""),
   })
   const isBaseSet = data?.id === "base1" || data?.id === "base2"
+  if (isLoading || isFetching)
+    return (
+      <div className="flex h-dvh w-full items-center justify-center">
+        <Loader2 size={90} className="animate-spin" />
+      </div>
+    )
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center gap-5">

@@ -7,6 +7,7 @@ import { ConfigModule } from "@nestjs/config"
 import { SeriesModule } from "./series/series.module"
 import { SyncModule } from "./sync/sync.module"
 import { AuthModule } from "./auth/auth.module"
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from "./auth/auth.module"
     SeriesModule,
     SyncModule,
     AuthModule,
+    StatsModule,
   ],
   controllers: [],
   providers: [],
