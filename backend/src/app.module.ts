@@ -8,6 +8,7 @@ import { SeriesModule } from "./series/series.module"
 import { SyncModule } from "./sync/sync.module"
 import { AuthModule } from "./auth/auth.module"
 import { StatsModule } from './stats/stats.module';
+import { EmbeddingModule } from './embedding/embedding.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StatsModule } from './stats/stats.module';
     SyncModule,
     AuthModule,
     StatsModule,
+    EmbeddingModule,
   ],
   controllers: [],
   providers: [],
