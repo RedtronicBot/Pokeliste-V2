@@ -2,14 +2,12 @@ import { Injectable } from "@nestjs/common"
 import pLimit from "p-limit"
 import { PrismaService } from "prisma/prisma.service"
 import { CardService } from "src/card/card.service"
-import { EmbeddingService } from "src/embedding/embedding.service"
 import { SetBrief } from "src/types"
 @Injectable()
 export class SetService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cardServices: CardService,
-    private readonly embeddingService: EmbeddingService,
   ) {}
 
   async isEmpty() {
@@ -32,7 +30,6 @@ export class SetService {
     if (existingCards !== data.cardCount.total) {
       await this.cardServices.syncCardWithData(setId, data)
     }
-    await this.embeddingService.generateSetEmbeddings(setId)
     return this.prisma.set.findUnique({
       where: { id: setId },
       include: {

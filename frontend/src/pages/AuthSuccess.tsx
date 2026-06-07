@@ -5,11 +5,10 @@ import { useQueryClient } from "@tanstack/react-query"
 export default function AuthSuccess() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ["me"] })
-    navigate("/", { replace: true })
+    queryClient.refetchQueries({ queryKey: ["me"] }).then(() => {
+      navigate("/", { replace: true })
+    })
   }, [])
-
   return null
 }

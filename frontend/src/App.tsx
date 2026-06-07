@@ -5,10 +5,12 @@ import ExtensionTcg from "./pages/ExtensionTcg"
 import DashboardPocket from "./pages/DashboardPocket"
 import AuthSuccess from "./pages/AuthSuccess"
 import Stats from "./pages/Stats"
+import AppUrlListener from "./capacitor/AppUrlListener"
 
 function App() {
   return (
     <div className="bg-primary min-h-screen text-slate-100">
+      <AppUrlListener />
       <header className="bg-primary/80 sticky top-0 z-50 w-full border-b border-slate-800 backdrop-blur-md">
         <Navbar />
       </header>

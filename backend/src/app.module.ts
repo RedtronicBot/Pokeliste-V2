@@ -7,8 +7,8 @@ import { ConfigModule } from "@nestjs/config"
 import { SeriesModule } from "./series/series.module"
 import { SyncModule } from "./sync/sync.module"
 import { AuthModule } from "./auth/auth.module"
-import { StatsModule } from './stats/stats.module';
-import { EmbeddingModule } from './embedding/embedding.module';
+import { StatsModule } from "./stats/stats.module"
+import { MatcherModule } from './matcher/matcher.module';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { EmbeddingModule } from './embedding/embedding.module';
     SyncModule,
     AuthModule,
     StatsModule,
-    EmbeddingModule,
+    MatcherModule,
   ],
   controllers: [],
   providers: [],

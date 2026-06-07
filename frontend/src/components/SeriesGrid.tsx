@@ -33,10 +33,10 @@ const SeriesGrid = ({ filter, grouped = true }: SeriesGridProps) => {
 }
 
 const SetGrid = ({ sets }: { sets: any[] }) => (
-  <div className="grid grid-cols-2 gap-6">
+  <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
     {sets.map((set) => (
       <Link to={`/extension/${set.id}`} key={set.id}>
-        <div className="bg-tertiary group expansion-card relative flex max-h-44 cursor-pointer flex-col items-center rounded-xl border border-slate-500 p-4 transition-all duration-300">
+        <div className="bg-tertiary group expansion-card relative flex cursor-pointer flex-col items-center rounded-xl border border-slate-500 p-4 transition-all duration-300">
           <div className="mb-2 flex w-full items-start justify-between">
             <p className="text-xl font-bold">{set.name}</p>
           </div>

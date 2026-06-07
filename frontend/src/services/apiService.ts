@@ -32,4 +32,19 @@ export const apiService = {
     const { data } = await api.get("stats")
     return data
   },
+  compareCard: async (image: string, setId: string) => {
+    const { data } = await api.post("matcher/compare", {
+      image,
+      setId,
+    })
+
+    return data
+  },
+  compareCardPage: async (image: string, setId: string) => {
+    const { data } = await api.post("matcher/compare-page", {
+      image,
+      setId,
+    })
+    return data
+  },
 }

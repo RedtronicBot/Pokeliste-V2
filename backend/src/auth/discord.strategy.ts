@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config"
 import { PassportStrategy } from "@nestjs/passport"
 import { Profile, Strategy } from "passport-discord-auth"
 import { AuthService } from "./auth.service"
+
 @Injectable()
 export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
   constructor(
@@ -16,6 +17,13 @@ export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
       scope: ["identify"],
     })
   }
+
+  authorizationParams(options: any): Record<string, unknown> {
+    const platform = options.platform ?? "web"
+    const state = Buffer.from(JSON.stringify({ platform })).toString("base64url")
+    return { state }
+  }
+
   async validate(accessToken: string, refreshToken: string, profile: Profile) {
     return this.authService.findOrCreateFromDiscord(profile)
   }
