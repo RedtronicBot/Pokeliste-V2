@@ -9,7 +9,7 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: "5mb", extended: true }))
   app.use(cookieParser())
   app.enableCors({
-    origin: [process.env.FRONT_URL],
+    origin: [process.env.FRONT_URL, "https://localhost", "capacitor://localhost"],
     methods: ["GET", "PUT", "POST", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
