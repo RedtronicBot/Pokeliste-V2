@@ -15,7 +15,6 @@ export function createApiClient() {
     timeout: 60_000,
     headers: {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
     },
     withCredentials: true,
   })
