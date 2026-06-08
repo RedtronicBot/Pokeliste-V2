@@ -18,10 +18,10 @@ export class DiscordStrategy extends PassportStrategy(Strategy, "discord") {
     })
   }
 
-  authorizationParams(options: any): Record<string, unknown> {
+  authorizationParams(options: Record<string, unknown>): Record<string, unknown> {
     const platform = options.platform ?? "web"
     const state = Buffer.from(JSON.stringify({ platform })).toString("base64url")
-    return { state }
+    return { ...options, state }
   }
 
   async validate(accessToken: string, refreshToken: string, profile: Profile) {

@@ -1,5 +1,5 @@
 import { createApiClient } from "../hooks/createApiClient"
-import type { DiscordUser, OwnedVariant, RawCard, RawSetModel, Series, SetModel } from "../types"
+import type { DiscordUser, OwnedVariant, RawCard, RawSetModel, ScanResult, Series, SetModel } from "../types"
 
 const api = createApiClient()
 export const apiService = {
@@ -40,7 +40,7 @@ export const apiService = {
 
     return data
   },
-  compareCardPage: async (image: string, setId: string) => {
+  compareCardPage: async (image: string, setId: string): Promise<{ cards: ScanResult[] }> => {
     const { data } = await api.post("matcher/compare-page", {
       image,
       setId,

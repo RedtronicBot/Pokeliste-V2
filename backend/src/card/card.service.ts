@@ -4,6 +4,17 @@ import { CreateOwnedVariantDto } from "./dto/CreateOwnedVariant.dto"
 import * as fs from "fs/promises"
 import * as path from "path"
 
+type TcgCard = {
+  id: string
+  image: string
+  name: string
+  localId: string
+}
+
+type TcgSetData = {
+  cards: TcgCard[]
+}
+
 @Injectable()
 export class CardService {
   constructor(private readonly prisma: PrismaService) {}
@@ -13,7 +24,6 @@ export class CardService {
   addOrUpdateOwnedCard(userId: string, cardId: string, dto: CreateOwnedVariantDto) {
     const { normal, reverse, holo, firstEdition, secondEdition } = dto
     const total = normal + holo + reverse + firstEdition + secondEdition
-
     if (total === 0) {
       return this.prisma.ownedVariant.deleteMany({
         where: { userId, cardId },
@@ -21,28 +31,14 @@ export class CardService {
     }
     return this.prisma.ownedVariant.upsert({
       where: { userId_cardId: { userId, cardId } },
-      update: {
-        normal,
-        reverse,
-        holo,
-        firstEdition,
-        secondEdition,
-      },
-      create: {
-        userId,
-        cardId,
-        normal,
-        reverse,
-        holo,
-        firstEdition,
-        secondEdition,
-      },
+      update: { normal, reverse, holo, firstEdition, secondEdition },
+      create: { userId, cardId, normal, reverse, holo, firstEdition, secondEdition },
     })
   }
 
-  async syncCardWithData(setId: string, data: any) {
+  async syncCardWithData(setId: string, data: TcgSetData) {
     await this.prisma.$transaction(
-      data.cards.map((card) =>
+      data.cards.map((card: TcgCard) =>
         this.prisma.card.upsert({
           where: { id: card.id },
           update: {
@@ -64,9 +60,8 @@ export class CardService {
     await this.downloadSetImages(setId, data.cards)
   }
 
-  private async downloadSetImages(setId: string, cards: any[]) {
+  private async downloadSetImages(setId: string, cards: TcgCard[]) {
     const setDir = path.join(this.imagesDir, setId)
-
     try {
       await fs.access(setDir)
       this.logger.log(`Images déjà présentes pour ${setId}`)
@@ -76,7 +71,6 @@ export class CardService {
     }
 
     this.logger.log(`Téléchargement des images pour ${setId} (${cards.length} cartes)`)
-
     let success = 0
     let failed = 0
 
@@ -85,7 +79,6 @@ export class CardService {
         const url = `${card.image}/low.webp`
         const response = await fetch(url)
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
         const buffer = Buffer.from(await response.arrayBuffer())
         const filePath = path.join(setDir, `${card.id}.webp`)
         await fs.writeFile(filePath, buffer)

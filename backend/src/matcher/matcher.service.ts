@@ -4,12 +4,28 @@ import * as path from "path"
 import * as fs from "fs/promises"
 import * as os from "os"
 
+type CardMatch = {
+  cardId: string
+  goodMatches: number
+  confidence: "high" | "medium" | "low"
+} | null
+
+type ScanResult = {
+  position: number
+  match: CardMatch
+}
+
+type PageMatchResult = {
+  cards: ScanResult[]
+  error?: string
+}
+
 @Injectable()
 export class MatcherService {
   private readonly logger = new Logger(MatcherService.name)
   private readonly imagesDir = path.join(process.cwd(), "images")
 
-  async matchPage(imageBase64: string, setId: string): Promise<any> {
+  async matchPage(imageBase64: string, setId: string): Promise<PageMatchResult> {
     const setImagesDir = path.join(this.imagesDir, setId)
     const pageScript = path.join(process.cwd(), "python", "page_matcher.py")
 
@@ -20,7 +36,7 @@ export class MatcherService {
     const pythonArgs = process.platform === "win32" ? ["-3.14", pageScript, tmpFile, setImagesDir] : [pageScript, tmpFile, setImagesDir]
     const start = Date.now()
 
-    return new Promise((resolve, reject) => {
+    return new Promise<PageMatchResult>((resolve, reject) => {
       const python = spawn(pythonCmd, pythonArgs)
 
       let output = ""
@@ -43,7 +59,7 @@ export class MatcherService {
           return
         }
         try {
-          resolve(JSON.parse(output))
+          resolve(JSON.parse(output) as PageMatchResult)
         } catch {
           reject(new Error(`Réponse Python invalide: ${output}`))
         }

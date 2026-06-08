@@ -11,14 +11,14 @@ const ExtensionTcg = () => {
   const { id } = useParams()
   const [scanOpen, setScanOpen] = useState(false)
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["Extension"],
     queryFn: async () => await apiService.getCard(id ?? ""),
   })
 
   const isBaseSet = data?.id === "base1" || data?.id === "base2"
 
-  if (isLoading || isFetching)
+  if (isLoading)
     return (
       <div className="flex h-dvh w-full items-center justify-center">
         <Loader2 size={90} className="animate-spin" />

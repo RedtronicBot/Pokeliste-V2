@@ -3,17 +3,8 @@ import { X, CheckCheck, Settings } from "lucide-react"
 import { takeCardPhoto } from "../hooks/useCamera"
 import { apiService } from "../services/apiService"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { Card } from "../types"
+import type { Card, ScanResult } from "../types"
 import CardModifyModal from "./CardModifyModal"
-
-interface ScanResult {
-  position: number
-  match: {
-    cardId: string
-    goodMatches: number
-    confidence: "high" | "medium" | "low"
-  } | null
-}
 
 interface Props {
   setId: string
@@ -27,18 +18,21 @@ type Step = "idle" | "scanning" | "results" | "manual"
 export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose }: Props) {
   const [step, setStep] = useState<Step>("idle")
   const [preview, setPreview] = useState<string>()
-  const [results, setResults] = useState<ScanResult[]>([])
   const [manualCards, setManualCards] = useState<Card[]>([])
+  const [validResults, setValidResults] = useState<ScanResult[]>([])
   const queryClient = useQueryClient()
 
-  // Cartes déjà possédées
   const ownedCardIds = new Set(existingCards.filter((c) => c.ownedVariant).map((c) => c.id))
 
   const { mutate: scanPage, isPending } = useMutation({
     mutationFn: ({ image, setId }: { image: string; setId: string }) => apiService.compareCardPage(image, setId),
-    onSuccess: (data) => {
-      setResults(data.cards)
+    onSuccess: (data: { cards: ScanResult[] }) => {
+      const valid = data.cards.filter((r: ScanResult) => r.match && r.match.confidence !== "low" && !ownedCardIds.has(r.match.cardId))
+      setValidResults(valid)
       setStep("results")
+    },
+    onError: (err) => {
+      console.error("onError appelé:", err)
     },
   })
 
@@ -54,6 +48,9 @@ export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["Extension"] })
     },
+    onError: (err) => {
+      console.error("Erreur ajout carte:", err)
+    },
   })
 
   async function handleScan() {
@@ -62,9 +59,6 @@ export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose
     setPreview(photo.preview)
     scanPage({ image: photo.base64, setId })
   }
-
-  // Filtre les résultats exploitables
-  const validResults = results.filter((r) => r.match && r.match.confidence !== "low" && !ownedCardIds.has(r.match.cardId))
 
   function handleAutoAdd() {
     validResults.forEach((r) => {

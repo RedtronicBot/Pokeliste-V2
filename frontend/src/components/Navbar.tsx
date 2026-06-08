@@ -31,7 +31,16 @@ const Navbar = () => {
 
   const { mutate: logout } = useMutation({
     mutationFn: apiService.getDiscordLogout,
-    onSuccess: () => queryClient.setQueryData(["me"], null),
+    onSuccess: () => {
+      // Vide le localStorage sur mobile
+      localStorage.removeItem("access_token")
+      queryClient.setQueryData(["me"], null)
+
+      // Redirige sur web uniquement
+      if (!Capacitor.isNativePlatform()) {
+        window.location.href = import.meta.env.VITE_FRONT_URL ?? "/"
+      }
+    },
   })
 
   const navLinks = [

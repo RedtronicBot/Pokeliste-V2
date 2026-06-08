@@ -1,7 +1,7 @@
 import { X } from "lucide-react"
 import type { Card, OwnedVariant, SetModel } from "../types"
 import { useClickOutside } from "../hooks/useClickOutside"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiService } from "../services/apiService"
@@ -24,7 +24,7 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
     if (!isAuthenticated) return
     setOpen(!open)
   }
-  const { register, handleSubmit } = useForm<CardFormInputs>({
+  const { register, handleSubmit, reset } = useForm<CardFormInputs>({
     defaultValues: {
       normal: card.ownedVariant?.normal ?? 0,
       holo: card.ownedVariant?.holo ?? 0,
@@ -33,6 +33,15 @@ const CardModifyModal = ({ card, isBaseSet }: CardModalInterface) => {
       secondEdition: card.ownedVariant?.secondEdition ?? 0,
     },
   })
+  useEffect(() => {
+    reset({
+      normal: card.ownedVariant?.normal ?? 0,
+      holo: card.ownedVariant?.holo ?? 0,
+      reverse: card.ownedVariant?.reverse ?? 0,
+      firstEdition: card.ownedVariant?.firstEdition ?? 0,
+      secondEdition: card.ownedVariant?.secondEdition ?? 0,
+    })
+  }, [card.ownedVariant])
   const queryClient = useQueryClient()
   const modifyCardMutation = useMutation({
     mutationFn: (data: CardFormInputs) => apiService.updateVariant(card.id, data),

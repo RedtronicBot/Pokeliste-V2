@@ -20,11 +20,10 @@ export function createApiClient() {
   })
 
   api.interceptors.request.use((config) => {
-    if (Capacitor.isNativePlatform()) {
-      const token = localStorage.getItem("access_token")
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
+    const isNative = Capacitor.isNativePlatform()
+    const token = localStorage.getItem("access_token")
+    if (isNative && token) {
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   })

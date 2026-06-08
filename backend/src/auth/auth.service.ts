@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common"
 import { JwtService } from "@nestjs/jwt"
 import { PrismaService } from "prisma/prisma.service"
+import { Profile } from "passport-discord-auth"
+import { User } from "prisma/generated/prisma/client"
 
 @Injectable()
 export class AuthService {
@@ -8,9 +10,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
-  async findOrCreateFromDiscord(profile: any) {
-    const { id, username, avatar } = profile
 
+  async findOrCreateFromDiscord(profile: Profile) {
+    const { id, username, avatar } = profile
     const user = await this.prisma.user.upsert({
       where: { discordId: id },
       update: { username, avatar },
@@ -20,7 +22,6 @@ export class AuthService {
         avatar,
       },
     })
-
     return user
   }
 
@@ -28,7 +29,7 @@ export class AuthService {
     return this.prisma.user.findUnique({ where: { id } })
   }
 
-  async signJwt(user: any): Promise<string> {
+  async signJwt(user: User): Promise<string> {
     return this.jwtService.sign({ sub: user.id, username: user.username })
   }
 }

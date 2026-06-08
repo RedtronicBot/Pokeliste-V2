@@ -22,8 +22,10 @@ export default function AppUrlListener() {
             await queryClient.refetchQueries({ queryKey: ["me"] })
             navigate("/")
           }
-        } catch (e: any) {
-          alert("ERREUR : " + e?.message)
+        } catch (e) {
+          if (e instanceof Error) {
+            alert("ERREUR : " + e.message)
+          }
         }
       })
     }

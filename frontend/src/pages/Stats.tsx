@@ -21,6 +21,14 @@ type StatsData = {
   }[]
 }[]
 
+type BarShapeProps = {
+  x: number
+  y: number
+  width: number
+  height: number
+  index: number
+}
+
 const VARIANT_COLORS = {
   normal: "#6366f1",
   holo: "#f59e0b",
@@ -216,7 +224,7 @@ export default function Stats() {
               <Bar
                 dataKey="pct"
                 radius={[0, 6, 6, 0]}
-                shape={(props: any) => {
+                shape={(props: BarShapeProps) => {
                   const { x, y, width, height, index } = props
                   const fill = `hsl(${240 - index * (160 / Math.max(seriesCompletion.length - 1, 1))}, 70%, 60%)`
                   return <rect x={x} y={y} width={width} height={height} fill={fill} rx={6} ry={6} />

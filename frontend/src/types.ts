@@ -50,3 +50,12 @@ export type RawCard = Omit<Card, "ownedVariant"> & {
 export type RawSetModel = Omit<SetModel, "cards"> & {
   cards: RawCard[]
 }
+
+export type ScanResult = {
+  position: number
+  match: {
+    cardId: string
+    goodMatches: number
+    confidence: "high" | "medium" | "low"
+  } | null
+}

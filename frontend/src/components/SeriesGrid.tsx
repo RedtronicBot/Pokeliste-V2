@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { apiService } from "../services/apiService"
 import extension_fallback from "../assets/pokemon-trading-card-game-logo.png"
 import { Link } from "react-router"
+import type { SetModel } from "../types"
 
 interface SeriesGridProps {
   filter: "tcgp" | "other"
@@ -32,7 +33,7 @@ const SeriesGrid = ({ filter, grouped = true }: SeriesGridProps) => {
   )
 }
 
-const SetGrid = ({ sets }: { sets: any[] }) => (
+const SetGrid = ({ sets }: { sets: SetModel[] }) => (
   <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
     {sets.map((set) => (
       <Link to={`/extension/${set.id}`} key={set.id}>
