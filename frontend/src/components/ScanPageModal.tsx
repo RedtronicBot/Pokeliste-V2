@@ -1,10 +1,16 @@
-import { useState } from "react"
-import { X, CheckCheck, Settings } from "lucide-react"
+import { useState, useCallback } from "react"
+import { X, CheckCheck, Settings, Crop as CropIcon } from "lucide-react"
+import Cropper, { type Area } from "react-easy-crop"
 import { takeCardPhoto } from "../hooks/useCamera"
 import { apiService } from "../services/apiService"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { Card, ScanResult } from "../types"
 import CardModifyModal from "./CardModifyModal"
+import { cropImageToBase64, type CropPixelArea } from "../utils/cropImage"
+
+// Ratio d'une grille 3x3 de cartes = ratio d'une carte seule (2.5cm / 3.5cm).
+// Doit rester cohérent avec CARD_ASPECT_RATIO côté backend (page_matcher.py).
+const PAGE_ASPECT_RATIO = 2.5 / 3.5
 
 interface Props {
   setId: string
@@ -13,11 +19,15 @@ interface Props {
   onClose: () => void
 }
 
-type Step = "idle" | "scanning" | "results" | "manual"
+type Step = "idle" | "cropping" | "scanning" | "results" | "manual"
 
 export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose }: Props) {
   const [step, setStep] = useState<Step>("idle")
   const [preview, setPreview] = useState<string>()
+  const [rawPhoto, setRawPhoto] = useState<string>() // photo brute (data URL), avant recadrage
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedArea, setCroppedArea] = useState<CropPixelArea>()
   const [manualCards, setManualCards] = useState<Card[]>([])
   const [validResults, setValidResults] = useState<ScanResult[]>([])
   const queryClient = useQueryClient()
@@ -54,10 +64,23 @@ export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose
   })
 
   async function handleScan() {
-    setStep("scanning")
     const photo = await takeCardPhoto()
-    setPreview(photo.preview)
-    scanPage({ image: photo.base64, setId })
+    setRawPhoto(photo.preview)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setStep("cropping")
+  }
+
+  const onCropComplete = useCallback((_croppedAreaPercent: Area, croppedAreaPixels: Area) => {
+    setCroppedArea(croppedAreaPixels)
+  }, [])
+
+  async function handleConfirmCrop() {
+    if (!rawPhoto || !croppedArea) return
+    setStep("scanning")
+    const croppedBase64 = await cropImageToBase64(rawPhoto, croppedArea)
+    setPreview(`data:image/jpeg;base64,${croppedBase64}`)
+    scanPage({ image: croppedBase64, setId })
   }
 
   function handleAutoAdd() {
@@ -87,6 +110,45 @@ export default function ScanPageModal({ setId, isBaseSet, existingCards, onClose
           <button onClick={handleScan} className="mt-10 rounded-xl bg-indigo-600 px-8 py-4 text-lg font-bold hover:bg-indigo-500">
             Prendre une photo
           </button>
+        )}
+
+        {/* Étape crop : ajuster le cadre sur la page du classeur avant envoi */}
+        {step === "cropping" && rawPhoto && (
+          <div className="flex w-full flex-col items-center gap-4">
+            <p className="text-center text-sm text-slate-300">Cale le cadre sur les 9 cartes de la page, puis valide</p>
+            <div className="relative h-[60vh] w-full max-w-md">
+              <Cropper
+                image={rawPhoto}
+                crop={crop}
+                zoom={zoom}
+                aspect={PAGE_ASPECT_RATIO}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full max-w-md"
+            />
+            <div className="flex gap-3">
+              <button onClick={() => setStep("idle")} className="rounded-lg bg-slate-700 px-4 py-2 font-bold hover:bg-slate-600">
+                Reprendre la photo
+              </button>
+              <button
+                onClick={handleConfirmCrop}
+                className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 font-bold hover:bg-indigo-500"
+              >
+                <CropIcon size={18} />
+                Valider le cadrage
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Scanning en cours */}
