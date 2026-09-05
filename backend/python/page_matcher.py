@@ -24,129 +24,74 @@ def preprocess(img):
     return gray
 
 
-def order_points_grid(rects):
-    """Trie les rectangles détectés en grille : ligne par ligne, gauche à droite."""
-    rects = sorted(rects, key=lambda r: r[1])
-    rows = []
-    current_row = [rects[0]]
-    row_y = rects[0][1]
-    for r in rects[1:]:
-        if abs(r[1] - row_y) < r[3] * 0.5:
-            current_row.append(r)
-        else:
-            rows.append(current_row)
-            current_row = [r]
-            row_y = r[1]
-    rows.append(current_row)
-    ordered = []
-    for row in rows:
-        row_sorted = sorted(row, key=lambda r: r[0])
-        ordered.extend(row_sorted)
-    return ordered
+def detect_binder_zone(img):
+    """Détecte la zone globale de la page du classeur (seuillage Otsu, robuste
+    à l'éclairage — contrairement à un seuil fixe qui casse dès que le fond
+    n'est pas très sombre).
 
-
-def detect_cards_by_contour(img):
-    """Détecte chaque carte individuellement via ses contours, au lieu de découper
-    une grille fixe sur toute l'image. Plus robuste au cadrage et à l'éclairage
-    qu'un seuil fixe + division 3x3 aveugle."""
+    On segmente la PAGE ENTIÈRE plutôt que chaque carte individuellement :
+    le contraste page-claire / classeur-noir est fiable, alors que segmenter
+    carte par carte casse dès qu'une carte a une illustration sombre à
+    l'intérieur (le seuillage la confond avec le fond). Une fois la page
+    localisée, une simple division en grille fixe suffit — voir extract_cards.
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    # Seuillage automatique (Otsu) : s'adapte à la luminosité de la photo,
-    # contrairement à un seuil fixe qui casse dès que le fond n'est pas très sombre.
+    blur = cv2.GaussianBlur(gray, (7, 7), 0)
     _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-
-    # Otsu peut inverser fond/forme selon les cas : on corrige si la majorité
-    # de l'image ressort "blanche" (probablement le fond, pas les cartes).
-    white_ratio = np.sum(thresh == 255) / thresh.size
-    if white_ratio > 0.6:
+    if np.sum(thresh == 255) / thresh.size > 0.6:
         thresh = cv2.bitwise_not(thresh)
-
-    kernel = np.ones((15, 15), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-
-    contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
     h_img, w_img = img.shape[:2]
     img_area = h_img * w_img
-    candidates = []
-
-    for c in contours:
-        area = cv2.contourArea(c)
-        if area < img_area * MIN_CARD_AREA_RATIO or area > img_area * MAX_CARD_AREA_RATIO:
-            continue
-        x, y, w, h = cv2.boundingRect(c)
-        if h == 0:
-            continue
-        ratio = w / h
-        # accepte l'orientation portrait ET paysage d'une carte à jouer
-        if not (abs(ratio - CARD_ASPECT_RATIO) < ASPECT_TOLERANCE or
-                abs(ratio - 1 / CARD_ASPECT_RATIO) < ASPECT_TOLERANCE):
-            continue
-        candidates.append((x, y, w, h))
-
-    print(f"Contours candidats retenus: {len(candidates)}", file=sys.stderr)
-    return candidates
-
-
-def detect_binder_zone(img):
-    """Repli : détecte la zone globale du classeur (seuillage Otsu, plus fiable
-    qu'un seuil fixe à 50)."""
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    kernel = np.ones((20, 20), np.uint8)
-    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    scale = w_img / 1000
+    kernel = np.ones((max(1, int(20 * scale)),) * 2, np.uint8)
+    closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return None
-    h_img, w_img = img.shape[:2]
-    min_area = (w_img * h_img) * 0.3
-    large_contours = [c for c in contours if cv2.contourArea(c) > min_area]
+
+    large_contours = [c for c in contours if cv2.contourArea(c) > img_area * 0.3]
     if not large_contours:
         return None
-    largest = max(large_contours, key=cv2.contourArea)
-    x, y, w, h = cv2.boundingRect(largest)
-    print(f"Zone détectée: x={x}, y={y}, w={w}, h={h}", file=sys.stderr)
-    print(f"Taille image: {w_img}x{h_img}", file=sys.stderr)
+
+    # Une page 3x3 de cartes a sensiblement le même ratio l/h qu'une carte seule.
+    # Si plusieurs candidats, on privilégie celui dont le ratio colle le mieux,
+    # ce qui évite d'attraper un objet parasite (ex: table, clavier) fusionné
+    # avec la page par le closing morphologique.
+    def ratio_score(c):
+        x, y, w, h = cv2.boundingRect(c)
+        r = min(w, h) / max(w, h) if w and h else 0
+        return abs(r - CARD_ASPECT_RATIO)
+
+    best = min(large_contours, key=ratio_score)
+    x, y, w, h = cv2.boundingRect(best)
+    print(f"Zone détectée: x={x}, y={y}, w={w}, h={h} (image: {w_img}x{h_img})", file=sys.stderr)
     return x, y, w, h
 
 
 def extract_cards(img):
-    boxes = detect_cards_by_contour(img)
-
-    if len(boxes) >= 4:
-        # Assez de cartes détectées individuellement : on s'y fie plutôt qu'à une grille aveugle.
-        ordered = order_points_grid(boxes)
-        cards = []
-        for x, y, w, h in ordered:
-            m = int(min(w, h) * 0.03)
-            cards.append(img[y + m:y + h - m, x + m:x + w - m])
-        return cards
-
-    # Repli : détection individuelle insuffisante -> ancienne méthode par grille fixe,
-    # mais avec un seuillage Otsu au lieu du seuil fixe à 50.
-    print("Détection individuelle insuffisante, repli sur grille fixe", file=sys.stderr)
+    """Découpe la photo en 9 cartes : localise la page du classeur, puis
+    divise en grille fixe 3x3. Volontairement simple — segmenter chaque
+    carte individuellement par sa luminosité s'est avéré peu fiable dès
+    qu'une carte a une illustration sombre (voir detect_binder_zone)."""
     zone = detect_binder_zone(img)
     if zone:
         x, y, w, h = zone
         margin = 10
         binder = img[y + margin:y + h - margin, x + margin:x + w - margin]
     else:
+        print("Aucune zone détectée, utilisation de l'image entière", file=sys.stderr)
         binder = img
+
     h, w = binder.shape[:2]
-    card_h = h // 3
-    card_w = w // 3
+    card_h, card_w = h // 3, w // 3
     cards = []
     for row in range(3):
         for col in range(3):
-            y1 = row * card_h
-            y2 = (row + 1) * card_h
-            x1 = col * card_w
-            x2 = (col + 1) * card_w
+            y1, y2 = row * card_h, (row + 1) * card_h
+            x1, x2 = col * card_w, (col + 1) * card_w
             inner_margin = 8
-            card = binder[y1 + inner_margin:y2 - inner_margin, x1 + inner_margin:x2 - inner_margin]
-            cards.append(card)
+            cards.append(binder[y1 + inner_margin:y2 - inner_margin, x1 + inner_margin:x2 - inner_margin])
     return cards
 
 
