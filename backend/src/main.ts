@@ -5,8 +5,8 @@ import * as express from "express"
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
-  app.use(express.json({ limit: "5mb" }))
-  app.use(express.urlencoded({ limit: "5mb", extended: true }))
+  app.use(express.json({ limit: "10mb" }))
+  app.use(express.urlencoded({ limit: "10mb", extended: true }))
   app.use(cookieParser())
   app.enableCors({
     origin: [process.env.FRONT_URL, "https://localhost", "capacitor://localhost"],
